@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>SRJF - Gabriel Vargas Monroy</title>
+    <link rel="stylesheet" type="text/css" href="public/css/style.css">
+</head>
+
+<body>
+    <div>
+        <h1>Algoritmos de Planificacion - SRTF</h1>
+    </div>
+    <button onclick="generar()">Generar</button>
+    <div>
+        <label for="txtTiempoInicio">Identificador</label>
+        <input id="txtId" class="text" name="txtId" type="text" value="" placeholder="Id" required/>
+        <label for="txtTiempoInicio">Nombre</label>
+        <input id="txtNombre" class="text" name="txtNombre" type="text" value="" placeholder="Nombre" required />
+        <label for="txtTiempoInicio">Tiempo Inicio</label>
+        <input id="txtTiempo" class="text" name="txtTiempoInicio" type="text" value="" placeholder="Tiempo" required />
+        <label for="txtTiempoInicio">Rafaga</label>
+        <input id="txtRafaga" class="text" name="txtRafaga" type="text" value="" placeholder="Rafaga" required />
+        <button onclick="agregar()">Agregar</button>
+    </div>
+    <div>
+        <h4>Cantidad de Procesos</h4>
+        <h5 id="cantidadProcesos">0</h5>
+        <table id="processList" class="processList">
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Tiempo Inicio</th>
+                <th>Rafaga</th>
+            </tr>
+        </table>
+        <h4>Cantidad de Procesos en Espera</h4>
+        <h5 id="cantidadProcesosEspera">0</h5>
+        <table id="processListWait" class="processListWait">
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Tiempo Inicio</th>
+                <th>Rafaga</th>
+                <th>Tiempo Comienzo</th>
+                <th>Tiempo Final</th>
+                <th>Tiempo Retorno</th>
+                <th>Tiempo Espera</th>
+            </tr>
+        </table>
+    </div>
+    <div>
+        <h4>Proceso En Ejecucion</h4>
+        <h6>ID:</h6>
+        <p id="idProcesoEjecucion">0</p>
+        <h6>Nombre:</h6>
+        <p id="nombreProcesoEjecucion"></p>
+        <h6>Rafaga:</h6>
+        <p id="rafagaProcesoEjecucion">0</p>
+        <h6>Tiempo Comienzo:</h6>
+        <p id="tComienzoProcesoEjecucion">0</p>
+        <h6>Tiempo Retorno:</h6>
+        <p id="tRetornoProcesoEjecucion">0</p>
+        <h6>Tiempo Espera:</h6>
+        <p id="tEsperaProcesoEjecucion">0</p>
+    </div>
+    <div>
+        <h4>Tiempo de Ejecucion</h4>
+        <h5 id="timeExec">0</h5>
+        <canvas id="myCanvas"></canvas>
+        <legend for="myCanvas"></legend>
+        <div>
+            <button onclick="pausar()" id="inicioTiempo">Iniciar Ejecucion</button>
+            <button onclick="detener()">Parar Ejecucion</button>
+        </div>
+    </div>
+    <div>
+        <h4>Cantidad de Procesos Finalizados</h4>
+        <h5 id="cantidadProcesosFin">0</h5>
+        <table id="processListEnd" class="processListEnd">
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Tiempo Inicio</th>
+                <th>Rafaga</th>
+                <th>Tiempo Comienzo</th>
+                <th>Tiempo Final</th>
+                <th>Tiempo Retorno</th>
+                <th>Tiempo Espera</th>
+            </tr>
+        </table>
+    </div>
+    <script type="text/javascript" src="public/js/script.js"></script>
+</body>
+
+</html>

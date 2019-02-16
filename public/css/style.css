@@ -1,0 +1,12 @@
+canvas {
+    background: white;
+    border: solid 1px black;
+}
+
+table, th, td {
+    border: solid 1px black;
+}
+
+th {
+    height: 50px;
+}
