@@ -11,6 +11,8 @@ var tiempoGlobalEjecucion = 0; //Tiempo de ejecucion de proceso
 
 var procesoEspacioBase = 0; //Valor en la grafica donde se va asignar para su pintado
 
+var reglaActual = 0; //Regla que se esta ejecutando actualmente
+
 //Colores Procesos
 var colorVerde1 = "#088A08";
 var colorVerde2 = "#58FA58";
@@ -32,6 +34,7 @@ var myCantProcess = document.getElementById("cantidadProcesos");
 var myCantProcessEspera = document.getElementById("cantidadProcesosEspera");
 var myCantProcessFin = document.getElementById("cantidadProcesosFin");
 var myCuantum = document.getElementById("cuantum");
+var myVejezMaxima = document.getElementById("vejez");
 
 var myTableProcessList = document.getElementById("processList");
 var myTableRR0 = document.getElementById("processRR0");
@@ -42,6 +45,7 @@ var myTableProcessTerminados = document.getElementById("processListEnd");
 var procesos = parseInt(myCantProcess.innerHTML); //Cantidad de Procesos en el sistema
 var cuantum = parseInt(myCuantum.innerHTML)+1; //Cuantum Limite
 var cuantumProcesoEjecucion = 1; //Numero de proceso de ejecucion para controlar en cuantum
+var vejezMaxima = parseInt(myVejezMaxima.innerHTML);
 
 var listas = function() {
     this.listaProcesos = [];
@@ -92,13 +96,13 @@ var listas = function() {
     };
 
     this.addListaLlegados = function(dato) {
-        if (prioridad == 0) {
+        if (dato.prioridad == 0) {
             this.listaRR.push(dato);
         }
-        if (prioridad == 1) {
+        if (dato.prioridad == 1) {
             this.listaFifo.push(dato);
         }
-        if (prioridad == 2) {
+        if (dato.prioridad == 2) {
             this.listaSrtf.push(dato);
         }
     };
@@ -228,12 +232,12 @@ var listas = function() {
             });
         }
         if (lista == "fifo") {
-            this.listaRR.forEach(function(elem) {
+            this.listaFifo.forEach(function(elem) {
                 definicion += elem.putTableLong();
             });
         }
         if (lista == "srtf") {
-            this.listaRR.forEach(function(elem) {
+            this.listaSrtf.forEach(function(elem) {
                 definicion += elem.putTableLong();
             });
         }
@@ -431,10 +435,10 @@ var grafico = function() {
     };
 
     this.dibujarTexto = function(txt, x, y, stroke_color) {
-        ctx.beginPath();
-        ctx.strokeStyle = stroke_color;
-        ctx.font = "bold 15px arial";
-        ctx.fillText(txt,x,y);
+        this.ctx.beginPath();
+        this.ctx.strokeStyle = stroke_color;
+        this.ctx.font = "bold 15px arial";
+        this.ctx.fillText(txt,x,y);
     };
 
     this.lineasTiempo = function() {
@@ -451,7 +455,7 @@ var grafico = function() {
         }
 
         var nBarra = 0;
-        while (i <= tiempoGlobalEjecucion) {
+        while (nBarra <= tiempoGlobalEjecucion) {
             this.dibujarBarra(inicioBarras + (distanciaEntreBarras * nBarra), inicioPintadoBarra, grosorBarra, largoBarras, colorBarra);
             this.dibujarTexto(nBarra, inicioBarras + (distanciaEntreBarras * nBarra), posicionTexto, colorBarra);
             nBarra += 1;
@@ -485,6 +489,10 @@ var grafico = function() {
         }
         this.dibujarBarra(inicioBarras + ( x * distanciaEntreBarras), (margenProceso + 10) + ( y * distanciaEntreProcesos), distanciaEntreBarras, anchoBarra, tempColor);
     };
+
+    this.cambiarTamanoCanvas = function() {
+        this.myCanvas.width += distanciaEntreBarras;
+    };
 }
 
 var Posicion = function(_x, _y, _estado) {
@@ -493,7 +501,7 @@ var Posicion = function(_x, _y, _estado) {
     this.estado = _estado;
 
     this.dibujarPosicion = function(grafico) {
-        grafico.printProceso(ctx, this.x, this.y, this.estado);
+        grafico.printProceso(this.x, this.y, this.estado);
     };
 }
 
@@ -536,46 +544,128 @@ function incrementarWait() {
     });
 }
 
-//Hasta aqui llegue
-// #TODO: Revisar algunos casos donde el una prioridad da  reglas a otra
-
 function aumentarProcesoEjecucion() {
     if  (procesoEnEjecucion != null) {
         procesoEnEjecucion.tiempoFinal += 1;
         procesoEnEjecucion.tiempoRetorno += 1;
         procesoEnEjecucion.rafaga -= 1;
-        cuantumProcesoEjecucion += 1;
+
+        if (procesoEnEjecucion.prioridad == 0){
+            cuantumProcesoEjecucion += 1;
+        }
 
         var nPosicion = new Posicion(tiempoGlobalEjecucion, procesoEnEjecucion.procesoBase, true);
         arregloPintarProcesos.push(nPosicion);
     }
 }
 
-function prepararCiclo() {
-    if (todasListas.cantListaProcesosEspera() > 0 || procesoEnEjecucion != null) {
-        if (procesoEnEjecucion == null) {
-            procesoEnEjecucion = todasListas.fifoProceso();
-            procesoEnEjecucion.tiempoComienzo = tiempoGlobalEjecucion;
-        } else {
-            if (cuantum == cuantumProcesoEjecucion && procesoEnEjecucion.rafaga != 0) {
-                modificarProcesoEjecucion();
-                procesoEnEjecucion = todasListas.fifoProceso();
-                procesoEnEjecucion.tiempoComienzo = tiempoGlobalEjecucion;
-                cuantumProcesoEjecucion = 1;
-            }
-        }
-        if (procesoEnEjecucion.rafaga == 0) {
-            procesoEnEjecucion.tiempoFinal = tiempoGlobalEjecucion;
-            addToTableLong("processListEnd", procesoEnEjecucion);
-            cuantumProcesoEjecucion = 1;
-            if (todasListas.cantListaProcesosEspera() > 0) {
-                procesoEnEjecucion = todasListas.fifoProceso();
-                procesoEnEjecucion.tiempoComienzo = tiempoGlobalEjecucion;
-            } else {
-                procesoEnEjecucion = null;
-            }
+function modificarProcesoPorRafagaCorta() {
+    var nombre = procesoEnEjecucion.nombre + procesoEnEjecucion.salidaDispatch;
+    var id = procesoEnEjecucion.id;
+    var rafaga = procesoEnEjecucion.rafaga;
+    var tiempo = procesoEnEjecucion.tiempo;
+    var prioridad = procesoEnEjecucion.prioridad;
 
+    var nProceso = new Proceso(id, nombre, tiempo, rafaga, prioridad);
+    nProceso.salidaDispatch = procesoEnEjecucion.salidaDispatch + 1;
+    nProceso.tiempoInicio = procesoEnEjecucion.tiempoInicio;
+    nProceso.tiempoEspera = procesoEnEjecucion.tiempoEspera;
+    nProceso.vejez = procesoEnEjecucion.vejez;
+    nProceso.procesoBase = procesoEnEjecucion.procesoBase;
+
+    procesoEnEjecucion.tiempoFinal = tiempoGlobalEjecucion;
+
+    todasListas.addListaLlegados(nProceso);
+
+    todasListas.agregarYpintarListaTerminados(procesoEnEjecucion);
+}
+
+function seleccionarProcesoEjecucion() {
+    if (!todasListas.isVacioLlegados()) {
+        if (!todasListas.isVacioRR()) {
+            reglaActual = 0;
+            procesoEnEjecucion = todasListas.fifoProceso(0);
         }
+        else if (!todasListas.isVacioFifo()) {
+            reglaActual = 1;
+            procesoEnEjecucion = todasListas.fifoProceso(1);
+        }
+        else {
+            reglaActual = 2;
+            procesoEnEjecucion = todasListas.minProcesoRafaga();
+        }
+        console.log(procesoEnEjecucion);
+        procesoEnEjecucion.tiempoComienzo = tiempoGlobalEjecucion;
+    } else {
+        procesoEnEjecucion = null;
+    }
+}
+
+function verificarVejezProcesos() {
+    todasListas.listaFifo.forEach(function (elem, index) {
+        if (elem.vejez == vejezMaxima) {
+            elem.vejez = 0;
+            elem.prioridad = 0;
+            todasListas.addListaLlegados(elem);
+            todasListas.listaFifo.shift(index, 1);
+        }
+    });
+    todasListas.listaSrtf.forEach(function (elem, index) {
+        if (elem.vejez == vejezMaxima) {
+            elem.vejez = 0;
+            elem.prioridad = 1;
+            todasListas.addListaLlegados(elem);
+            todasListas.listaSrtf.shift(index, 1);
+        }
+    });
+}
+
+function prepararCiclo() {
+    if (!todasListas.isVacioLlegados() || procesoEnEjecucion != null) {
+        if (procesoEnEjecucion != null && procesoEnEjecucion.rafaga == 0) {
+            procesoEnEjecucion.tiempoFinal = tiempoGlobalEjecucion;
+            cuantumProcesoEjecucion = 1;
+            todasListas.agregarYpintarListaTerminados(procesoEnEjecucion);
+
+            seleccionarProcesoEjecucion();
+        }
+        if (dispatchEstado) {
+            if (procesoEnEjecucion == null && !todasListas.isVacioLlegados()) {
+                seleccionarProcesoEjecucion();
+            } else {
+                if (!todasListas.isVacioRR() && reglaActual > 0) {
+                    modificarProcesoPorRafagaCorta();
+                    cuantumProcesoEjecucion = 1;
+
+                    reglaActual = 0;
+                    procesoEnEjecucion = todasListas.fifoProceso(0);
+                    procesoEnEjecucion.tiempoComienzo = tiempoGlobalEjecucion;
+                } else if (!todasListas.isVacioFifo() && reglaActual > 1) {
+                    modificarProcesoPorRafagaCorta();
+
+                    reglaActual = 1;
+                    procesoEnEjecucion = todasListas.fifoProceso(1);
+                    procesoEnEjecucion.tiempoComienzo = tiempoGlobalEjecucion;
+                } else if (!todasListas.isVacioSrtf() && reglaActual == 2) {
+                    // Comparare la rafaga
+                    if (todasListas.compararProcesosRafaga(procesoEnEjecucion)) {
+                        modificarProcesoPorRafagaCorta();
+
+                        procesoEnEjecucion = todasListas.minProcesoRafaga();
+                        procesoEnEjecucion.tiempoComienzo = tiempoGlobalEjecucion;
+                    }
+                }
+                if (cuantum == cuantumProcesoEjecucion && procesoEnEjecucion.rafaga != 0) {
+                    modificarProcesoPorRafagaCorta();
+
+                    procesoEnEjecucion = todasListas.fifoProceso(0);
+                    procesoEnEjecucion.tiempoComienzo = tiempoGlobalEjecucion;
+                    cuantumProcesoEjecucion = 1;
+                }
+            }
+        }
+
+        verificarVejezProcesos();
         aumentarProcesoEjecucion();
         incrementarWait();
     }
@@ -592,23 +682,34 @@ function ejecucionProcesos() {
     });
 }
 
+function pintarTablaEspera() {
+    todasListas.pintarTabla("rr", "processRR0");
+    todasListas.pintarTabla("fifo", "processFifo1");
+    todasListas.pintarTabla("srtf", "processSrtf2");
+}
+
 // Manejo de Proceso Principal
+var graficaProcesos = new grafico();
 
 function arrancarEjecucion() {
     procesos = parseInt(myCantProcess.innerHTML); //Cantidad de Procesos en el sistema
+
     myTimeExec.innerHTML = tiempoGlobalEjecucion;
-    myCanvas.width += distanciaEntreBarras;
+
+    graficaProcesos.cambiarTamanoCanvas();
 
     ejecucionProcesos(); //Pasa de una Cola a otra
     prepararCiclo(); //App en si
     imprimirProcesoEjecucion(); //Imprime el Proceso Actual
+
     pintarTablaEspera(); // Imprime la tabla en Espera
 
     // Parte Grafica
-    lineasTiempo(ctx);
-    agregarTextos(ctx);
+    graficaProcesos.lineasTiempo();
+    graficaProcesos.agregarTextos();
+
     if (tiempoGlobalEjecucion > 0) {
-        pintarProcesos(ctx);
+        pintarProcesos(graficaProcesos);
     }
     tiempoGlobalEjecucion++;
 }
@@ -629,14 +730,14 @@ function pausar() {
 
 function detener() {
     // Tamaño base del Canvas
-    myCanvas.width = 120;
-    myCanvas.height = 300;
+    graficaProcesos.yanvas.width = 120;
+    graficaProcesos.myCanvas.height = 300;
     onOff = true;
     clearInterval(proceso);
     tiempoGlobalEjecucion = 0;
     myInitTime.innerHTML = "Iniciar Ejecucion";
     myTimeExec.innerHTML = 0;
-    dibujarBase(ctx);
+    graficaProcesos.dibujarBase(ctx);
     todasListas.listaLlegada = [];
 
     document.getElementById("idProcesoEjecucion").innerHTML = 0;
